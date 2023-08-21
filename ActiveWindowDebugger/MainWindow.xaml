@@ -1,0 +1,432 @@
+﻿<Window x:Class="ActiveWindowDebugger.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ActiveWindowDebugger"
+        Title="ActiveWindowDebugger"
+        Width="628"
+        Height="400"
+        MinWidth="185"
+        d:DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+        Closed="Window_Closed"
+        Closing="Window_Closing"
+        DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+        FontFamily="Consolas"
+        FontSize="14"
+        Loaded="Window_Loaded"
+        MouseDown="Window_MouseDown"
+        ResizeMode="CanResizeWithGrip"
+        ShowActivated="True"
+        SnapsToDevicePixels="True"
+        Topmost="{Binding IsTopmost, Mode=OneWay}"
+        UseLayoutRounding="False"
+        WindowStartupLocation="CenterScreen"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <local:InvertableBooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style TargetType="Border">
+            <Setter Property="CornerRadius" Value="0" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="18" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="86" />
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="btnDebug"
+                    Padding="16,4"
+                    Click="BtnDebug_Click"
+                    FontSize="48"
+                    ToolTip="激活窗口使得 AWD 窗口获得 Active 状态">
+                <Button.Content>
+                    <TextBlock>
+                        <Run d:Foreground="Green"
+                             d:Text="▶️"
+                             Foreground="{Binding StartStopIconColor}"
+                             Text="{Binding StartStopIcon, Mode=OneWay}" /> <Run d:Text="开始"
+                             Text="{Binding StartStopString, Mode=OneWay}" />
+                    </TextBlock>
+                </Button.Content>
+            </Button>
+
+            <Border Grid.Column="1"
+                    Margin="4,0,0,0"
+                    Padding="4"
+                    Background="#FFDDDDDD"
+                    BorderBrush="#FF707070"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <CheckBox HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Content="置顶"
+                              IsChecked="{Binding IsTopmost, Mode=TwoWay}"
+                              ToolTip="始终在其他打开的窗口顶部显示 AWD" />
+
+                    <ComboBox x:Name="cboActivateWindowPolls"
+                              Grid.Row="1"
+                              HorizontalContentAlignment="Left"
+                              VerticalContentAlignment="Center"
+                              SelectedValue="{Binding ActivatePollString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValuePath="Tag"
+                              ToolTip="激活频率(ms)" />
+
+                    <TextBox x:Name="tbActivatePoll"
+                             Grid.Row="1"
+                             Margin="0,0,20,0"
+                             HorizontalContentAlignment="Left"
+                             VerticalContentAlignment="Center"
+                             PreviewMouseWheel="TbActivatePoll_PreviewMouseWheel"
+                             Text="{Binding ActivatePollString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="{Binding ActivatePollToolTip}" />
+
+                    <TextBlock Grid.Row="1"
+                               Margin="0,0,2,0"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Bottom"
+                               IsHitTestVisible="False"
+                               Text="ms" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1"
+              Margin="0,0,0,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition Width="52" />
+                <ColumnDefinition Width="66" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="86" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox x:Name="cboAutoStartStates"
+                      Margin="0,0,2,0"
+                      FontSize="12"
+                      IsEnabled="False"
+                      SelectedIndex="0"
+                      SelectedValue="{Binding AutoStartState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Tag"
+                      ToolTip="{Binding AutoStartStatesTooTip}"
+                      ToolTipService.ShowOnDisabled="True">
+                <ComboBoxItem Content="活动状态"
+                              Tag="{StaticResource True}" />
+
+                <ComboBoxItem Content="非活动状态"
+                              Tag="{StaticResource False}" />
+
+                <ComboBoxItem Content="任意状态"
+                              Tag="{x:Null}" />
+            </ComboBox>
+
+            <TextBox Grid.Column="1"
+                     Margin="0,0,2,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     d:Text="12345"
+                     MaxLength="5"
+                     Text="{Binding AutoStartPidString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="{Binding AutoStartPidToolTip}" />
+
+            <Border Grid.Column="1"
+                    Margin="0,0,2,0"
+                    BorderBrush="Red"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Visibility="{Binding IsAutoStartProcessExists, Converter={StaticResource BoolToVis}, ConverterParameter=Inverted}" />
+
+            <ComboBox Grid.Column="2"
+                      Margin="0,0,2,0"
+                      d:SelectedIndex="0"
+                      FontSize="12"
+                      SelectedIndex="0"
+                      SelectedValue="{Binding AutoStartMeet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Tag"
+                      ToolTip="满足或不满足正则表达式">
+                <ComboBoxItem Content="满足"
+                              Tag="{StaticResource True}" />
+
+                <ComboBoxItem Content="不满足"
+                              Tag="{StaticResource False}" />
+            </ComboBox>
+
+            <TextBox Grid.Column="3"
+                     Margin="0,0,40,0"
+                     Padding="4,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     d:Text="Regex"
+                     Text="{Binding AutoStartPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="{Binding AutoStartPatternToolTip}" />
+
+            <Border Grid.Column="3"
+                    Margin="0,0,40,0"
+                    BorderBrush="Red"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Visibility="{Binding IsAutoStartPatternValid, Converter={StaticResource BoolToVis}, ConverterParameter=Inverted}" />
+
+            <Button x:Name="btnAutoStartPatternCaseSensitive"
+                    Grid.Column="3"
+                    Margin="0,0,22,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Click="BtnAutoStartPatternCaseSensitive_Click"
+                    Content="Aa"
+                    FontFamily="Consolas"
+                    Style="{StaticResource FluentIconButtonStyle}"
+                    Tag="{Binding AutoStartPatternMatchCase}"
+                    ToolTip="区分大小写" />
+
+            <TextBlock Grid.Column="3"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       d:Foreground="Green"
+                       d:Text="✔️"
+                       Foreground="{Binding AutoStartIconColor}"
+                       Text="{Binding AutoStartIcon, Mode=OneWay}"
+                       ToolTip="{Binding AutoStartToolTip}" />
+
+            <CheckBox Grid.Column="4"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Content="自动开始"
+                      IsChecked="{Binding IsAutoStartEnabled, Mode=TwoWay}"
+                      ToolTip="自动开始触发条件(匹配进程的主窗口标题)" />
+        </Grid>
+
+        <Grid Grid.Row="2"
+              Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition Width="52" />
+                <ColumnDefinition Width="66" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="86" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox x:Name="cboAutoStopStates"
+                      Margin="0,0,2,0"
+                      FontSize="12"
+                      IsEnabled="False"
+                      SelectedIndex="0"
+                      SelectedValue="{Binding AutoStopState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Tag"
+                      ToolTip="{Binding AutoStopStatesTooTip}"
+                      ToolTipService.ShowOnDisabled="True">
+                <ComboBoxItem Content="活动状态"
+                              Tag="{StaticResource True}" />
+
+                <ComboBoxItem Content="非活动状态"
+                              Tag="{StaticResource False}" />
+
+                <ComboBoxItem Content="任意状态"
+                              Tag="{x:Null}" />
+            </ComboBox>
+
+            <TextBox Grid.Column="1"
+                     Margin="0,0,2,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     d:Text="12345"
+                     MaxLength="5"
+                     Text="{Binding AutoStopPidString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="{Binding AutoStopPidToolTip}" />
+
+            <Border Grid.Column="1"
+                    Margin="0,0,2,0"
+                    BorderBrush="Red"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Visibility="{Binding IsAutoStopProcessExists, Converter={StaticResource BoolToVis}, ConverterParameter=Inverted}" />
+
+            <ComboBox Grid.Column="2"
+                      Margin="0,0,2,0"
+                      d:SelectedIndex="1"
+                      FontSize="12"
+                      SelectedIndex="0"
+                      SelectedValue="{Binding AutoStopMeet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Tag"
+                      ToolTip="满足或不满足正则表达式">
+                <ComboBoxItem Content="满足"
+                              Tag="{StaticResource True}" />
+
+                <ComboBoxItem Content="不满足"
+                              Tag="{StaticResource False}" />
+            </ComboBox>
+
+            <TextBox Grid.Column="3"
+                     Margin="0,0,40,0"
+                     Padding="4,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     d:Text="Regex"
+                     Text="{Binding AutoStopPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="{Binding AutoStopPatternToolTip}" />
+
+            <Border Grid.Column="3"
+                    Margin="0,0,40,0"
+                    BorderBrush="Red"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Visibility="{Binding IsAutoStopPatternValid, Converter={StaticResource BoolToVis}, ConverterParameter=Inverted}" />
+
+            <Button x:Name="btnAutoStopPatternCaseSensitive"
+                    Grid.Column="3"
+                    Margin="0,0,22,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Click="BtnAutoStopPatternCaseSensitive_Click"
+                    Content="Aa"
+                    FontFamily="Consolas"
+                    Style="{StaticResource FluentIconButtonStyle}"
+                    Tag="{Binding AutoStopPatternMatchCase}"
+                    ToolTip="区分大小写" />
+
+            <TextBlock Grid.Column="3"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       d:Foreground="Red"
+                       d:Text="❌"
+                       Foreground="{Binding AutoStopIconColor}"
+                       Text="{Binding AutoStopIcon, Mode=OneWay}"
+                       ToolTip="{Binding AutoStopToolTip}" />
+
+            <CheckBox Grid.Column="4"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Content="自动停止"
+                      IsChecked="{Binding IsAutoStopEnabled, Mode=TwoWay}"
+                      ToolTip="自动停止触发条件(匹配进程的主窗口标题)" />
+        </Grid>
+
+        <ListView x:Name="lvActiveLogs"
+                  Grid.Row="3"
+                  Margin="0,0,0,4"
+                  Padding="4"
+                  d:ItemsSource="{d:SampleData ItemCount=5}"
+                  FontSize="12"
+                  ItemsSource="{Binding ActiveWindowLogs}"
+                  PreviewMouseWheel="LvActiveLogs_PreviewMouseWheel"
+                  ScrollBar.Scroll="LvActiveLogs_Scroll"
+                  ScrollViewer.HorizontalScrollBarVisibility="Visible"
+                  ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="miOpenGithub"
+                              Click="MiOpenGithub_Click"
+                              Header="访问项目 Github"
+                              ToolTip="https://github.com/CodingOctocat/ActiveWindowDebugger" />
+
+                    <Separator />
+
+                    <MenuItem x:Name="miLogPoll"
+                              Header="实时更新速度" />
+
+                    <Separator />
+
+                    <MenuItem x:Name="miAutoScroll"
+                              Header="自动滚动"
+                              IsCheckable="True"
+                              IsChecked="{Binding CanAutoScroll, Mode=TwoWay}" />
+
+                    <MenuItem x:Name="miClearLogs"
+                              Click="MiClearLogs_Click"
+                              Header="全部清除"
+                              Icon="🗑️" />
+                </ContextMenu>
+            </ListView.ContextMenu>
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}">
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <TextBlock Text="{Binding}" />
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+
+        <TextBlock Grid.Row="3"
+                   Margin="0,0,2,6"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Bottom"
+                   FontSize="12"
+                   Foreground="DarkGray"
+                   Text="💡"
+                   ToolTip="活动窗口检测频率: 1ms" />
+
+        <Grid Grid.Row="4"
+              Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <TextBox Padding="8,0"
+                     VerticalContentAlignment="Center"
+                     FontSize="12"
+                     FontWeight="Bold"
+                     Foreground="Blue"
+                     IsReadOnly="True"
+                     Text="{Binding ActiveWindowLog.Time, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=HH\\:mm\\:ss\\.fff}"
+                     ToolTip="{Binding ActiveWindowKeepTimeString}" />
+
+            <TextBox x:Name="tbActiveWindowLog"
+                     Grid.Column="1"
+                     Padding="6,0"
+                     VerticalContentAlignment="Center"
+                     FontSize="12"
+                     FontWeight="Bold"
+                     Foreground="Blue"
+                     IsReadOnly="True"
+                     SizeChanged="TbActiveWindowLog_SizeChanged"
+                     Text="{Binding ActiveWindowLogWithoutTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                     TextWrapping="Wrap"
+                     ToolTip="{Binding ActiveWindowLogWithoutTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
+        <StatusBar x:Name="statusBar"
+                   Grid.Row="5"
+                   Margin="-4,0,-4,-4">
+            <StatusBarItem HorizontalAlignment="Stretch"
+                           HorizontalContentAlignment="Stretch">
+                <Grid>
+                    <ProgressBar Height="8" />
+
+                    <Rectangle Height="8"
+                               Fill="#FF06B025"
+                               Opacity="0.618"
+                               RadiusX="4"
+                               RadiusY="4">
+                        <Rectangle.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="rectScale" ScaleX="0" />
+                            </TransformGroup>
+                        </Rectangle.RenderTransform>
+                    </Rectangle>
+                </Grid>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
